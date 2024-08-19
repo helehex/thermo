@@ -13,4 +13,4 @@ This is currently tied to my WIP game framework, but may be split eventually.
 >- left to right
 >- top to bottom
 >- back to front
->- counter clockwise
+>- clockwise

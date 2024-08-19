@@ -114,14 +114,6 @@ struct Body:
                 field -= self
             except:
                 pass
-        # if self.pos.v.x > 1700:
-        #     self.pos.v.x -= 1800
-        # elif self.pos.v.x < -100:
-        #     self.pos.v.x += 1800
-        # if self.pos.v.y > 1100:
-        #     self.pos.v.y -= 1200
-        # elif self.pos.v.y < -100:
-        #     self.pos.v.y += 1200
 
     fn draw(self, camera: Camera, renderer: Renderer) raises:
         # AABB(self).draw(renderer, camera, sdl.Color(0, 100, 100))

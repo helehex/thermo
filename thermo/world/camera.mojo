@@ -9,19 +9,17 @@ struct Camera:
     var pivot: g2.Vector
     var target: Texture
     var frame_count: Int
-    var width: Float64
-    var height: Float64
+    var viewport: DRect[DType.float32]
     var is_main_camera: Bool
 
     fn __init__(
-        inout self, renderer: Renderer, transform: g2.Multivector[], pivot: g2.Vector[], width: Float64 = 1, height: Float64 = 1) raises:
+        inout self, renderer: Renderer, transform: g2.Multivector[], pivot: g2.Vector[], viewport: DRect) raises:
         self.transform = transform
         self.pivot = pivot
         var size = renderer.get_output_size()
-        self.target = Texture(renderer, mojo_sdl.TexturePixelFormat.RGBA8888, mojo_sdl.TextureAccess.TARGET, int(size[0] * width), int(size[1] * height))
+        self.target = Texture(renderer, mojo_sdl.TexturePixelFormat.RGBA8888, mojo_sdl.TextureAccess.TARGET, int(size[0] * viewport.w), int(size[1] * viewport.h))
         self.frame_count = 0
-        self.width = width
-        self.height = height
+        self.viewport = viewport.cast[DType.float32]()
         self.is_main_camera = False
 
     fn __eq__(self, other: Self) -> Bool:
@@ -86,7 +84,7 @@ struct Camera:
     #
     fn draw(self, field: Field, renderer: Renderer) raises:
         renderer.set_target(self.target)
-
+        renderer.set_color(thermo.field.background_clear)
         renderer.clear()
 
         # if self.frame_count == 50:
@@ -103,5 +101,5 @@ struct Camera:
 
         renderer.reset_target()
         var size = renderer.get_output_size()
-        renderer.set_viewport(DRect[DType.int32](0, 0, int(self.width * size[0]), int(self.height * size[1])))
+        renderer.set_viewport(DRect[DType.int32](self.viewport.x * size[0], self.viewport.y * size[1], self.viewport.w * size[0], self.viewport.h * size[1]))
         renderer.copy(self.target, None)

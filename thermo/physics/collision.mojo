@@ -117,7 +117,7 @@ struct Collision:
         var rel = prim1.pos - prim2.pos
         var rad_sum = prim2.radius
         var dis_sqr = rel.inn()
-        if dis_sqr < rad_sum * rad_sum:
+        if 0.0 < dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
             contact.set(prim1.pos, normal, rad_sum - distance)

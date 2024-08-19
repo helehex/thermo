@@ -19,7 +19,7 @@ def main():
     var field = Field(renderer, g2.Vector(0, 0.1) + 1.0)#g2.Multivector(1.00001, 0, 0, 0.00001))
     seed()
 
-    field += Camera(renderer, g2.Rotor(10, 1), g2.Vector(0, 0), 0.25, 0.25)
+    field += Camera(renderer, g2.Rotor(10, 1), g2.Vector(0, 0), DRect[DType.float32](0.4, 0.0, 0.2, 0.2))
 
     # field.nodes += Node(g2.Vector(100, 100), g2.Vector(), AABB(g2.Vector(-100, -100), g2.Vector(100, 100)))
     # field.nodes += Node(g2.Vector(), g2.Vector(), g2.Vector())
@@ -82,16 +82,22 @@ def main():
         var screen_cursor = mouse.get_position()
         var world_cursor = field._cameras[0].cam2field(g2.Vector(screen_cursor[0], screen_cursor[1]))
 
-        # field._bodies[0].vel = (world_cursor - field._bodies[0].pos.v) + 1
+        field._bodies[0].vel.v = (world_cursor - field._bodies[0].pos.v) * 0.2
         field._bodies[0].pos.v = world_cursor
 
         if spawn == True:
             # field += Body(world_cursor, List[Primitive](Primitive(Circle(g2.Vector(random_float64(50, 0), 0), random_float64(20, 60))), Primitive(Circle(g2.Vector(random_float64(-50, 0), 0), random_float64(20, 60)))))
-            field += Body(world_cursor, List[Primitive](Primitive(Line(g2.Vector(-100, -100), g2.Vector(100, -100))), Primitive(Line(g2.Vector(100, -100), g2.Vector(100, 100))), Primitive(Line(g2.Vector(100, 100), g2.Vector(-100, 100))), Primitive(Line(g2.Vector(-100, 100), g2.Vector(-100, -100)))))
+            field += Body(world_cursor, List[Primitive](
+                Primitive(Line(g2.Vector(-100, -100), g2.Vector(100, -100))), 
+                Primitive(Line(g2.Vector(100, -100), g2.Vector(100, 100))), 
+                Primitive(Line(g2.Vector(100, 100), g2.Vector(-100, 100))), 
+                Primitive(Line(g2.Vector(-100, 100), g2.Vector(-100, -100))),
+                Primitive(Circle(None, 100))
+                ))
             spawn = False
 
         # field._nodes[0].prims[0]._data.unsafe_get[Ray]()[].dir = world_cursor
-        field.simulate()
+        field.step()
         field._bodies[0].pos.v = world_cursor
         field.update(clock.delta_time, keyboard)
         field.draw(renderer)

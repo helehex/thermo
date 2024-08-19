@@ -44,7 +44,7 @@ struct Field:
         self._cameras = List[Camera](capacity=1000)
         # self.updateables = List[update_fn]()
         # self.renderables = List[render_fn]()
-        self += Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), 1, 1)
+        self += Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1))
         
 
 
@@ -82,17 +82,23 @@ struct Field:
     fn __isub__(inout self, node: Node) raises:
         _ = self._nodes.pop(self._nodes.index(node))
 
-
-
-    fn simulate(inout self):
+    # +------( Step )------+ #
+    #
+    fn step(inout self):
         for body in self._bodies:
             if body[].mass < 100000:
                 body[].color = Color(127, 127, 0, 255)
                 body[].dvel = (body[].dvel.v + self.gravity.v) + (body[].dvel.rotor() * self.gravity.rotor())
 
             for other_body in self._bodies:
+                if (body[].mass > 100000 and other_body[].mass > 100000):
+                    continue
+
+                if body == other_body:
+                    continue
+                
                 # aabb phase collision detection
-                if body != other_body and near(body[], other_body[]) and (body[].mass < 100000 or other_body[].mass < 100000):
+                if near(body[], other_body[]):
                     body[].add_collision(other_body[])
 
                 # debug touching
@@ -119,6 +125,8 @@ struct Field:
         for body in self._bodies:
             body[].simulate()
     
+    # +------( Update )------+ #
+    #
     fn update(inout self, delta_time: Float64, keyboard: Keyboard):
         for camera in self._cameras:
             camera[].update(delta_time, keyboard)
@@ -132,8 +140,10 @@ struct Field:
         # for updateable in self.updateables:
         #     updateable[](delta_time, key_state)
 
-    def draw(self, renderer: Renderer):
-        # renderer.set_color(background_clear)
+    # +------( Draw )------+ #
+    #
+    fn draw(self, renderer: Renderer) raises:
+        renderer.set_color(background_clear)
+        renderer.clear()
         for camera in self._cameras:
-            renderer.set_color(background_clear)
             camera[].draw(self, renderer)

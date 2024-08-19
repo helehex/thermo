@@ -35,4 +35,4 @@ struct Circle:
 
     fn draw(self, renderer: Renderer, color: Color) raises:
         renderer.set_color(color)
-        renderer.draw_circle(DPoint(self.pos.x.cast[DType.int16](), self.pos.y.cast[DType.int16]()), self.radius.cast[DType.int16]())
+        renderer.draw_circle(DPoint[DType.int16](self.pos.x, self.pos.y), self.radius.cast[DType.int16]())
