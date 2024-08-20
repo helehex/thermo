@@ -1,4 +1,9 @@
+# x--------------------------------------------------------------------------x #
+# | Copyright (c) 2024 Helehex
+# x--------------------------------------------------------------------------x #
+
 alias slop = -0.001
+
 
 @value
 struct Collision:
@@ -9,17 +14,16 @@ struct Collision:
     var elas: Float64
     var fric: Float64
 
-    fn __init__(inout self, b1: Body, b2: Body):
+    fn __init__(inout self, b1: UnsafePointer[Body], b2: UnsafePointer[Body]):
         self.still_near = True
-        self.b1 = UnsafePointer[Body].address_of(b1)
-        self.b2 = UnsafePointer[Body].address_of(b2)
-        self.elas = (b1.elas + b2.elas) / 2
-        self.fric = (b1.fric + b2.fric) / 2
-        self.contacts = List[Contact](capacity = len(self.b1[].prims) * len(self.b2[].prims))
-
-    fn blank_contacts(inout self):
-        for _ in range(len(self.b1[].prims) * len(self.b2[].prims)):
-            self.contacts += Contact(self)
+        self.b1 = b1
+        self.b2 = b2
+        self.elas = (b1[].elas + b2[].elas) / 2
+        self.fric = (b1[].fric + b2[].fric) / 2
+        var num_contacts = len(b1[].prims) * len(b2[].prims)
+        self.contacts = List[Contact](capacity = num_contacts)
+        for _ in range(num_contacts):
+            self.contacts += Contact()
 
     fn detect(inout self):
         self.still_near = False
@@ -36,9 +40,9 @@ struct Collision:
                 contact[].start()
 
     fn solve(inout self):
-        for contact in self.contacts:
-            if contact[].penetration > slop:
-                contact[].solve()
+        for idx in range(len(self.contacts)):
+            if self.contacts[idx].penetration > slop:
+                self.contacts[idx].solve()
 
     fn detect_contact(self, prim1: Primitive, prim2: Primitive, inout contact: Contact) -> Bool:
         if prim1._data.isa[Circle]():
@@ -65,7 +69,7 @@ struct Collision:
         if dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
-            contact.set(prim2.pos + (normal * prim2.radius), normal, rad_sum - distance)
+            contact.set(self, prim2.pos + (normal * prim2.radius), normal, rad_sum - distance)
             return True
         return False
 
@@ -76,7 +80,7 @@ struct Collision:
         if dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
-            contact.set(prim2.pos, normal, rad_sum - distance)
+            contact.set(self, prim2.pos, normal, rad_sum - distance)
             return True
         return False
 
@@ -98,9 +102,9 @@ struct Collision:
             elif otr > lin_nom:
                 return self.detect_contact(prim1, prim2.end, contact)
             elif inr > 0:
-                contact.set(prim1.pos + (normal * prim1.radius), -normal, prim1.radius - inr)
+                contact.set(self, prim1.pos + (normal * prim1.radius), -normal, prim1.radius - inr)
             else:
-                contact.set(prim1.pos - (normal * prim1.radius), normal, prim1.radius + inr)
+                contact.set(self, prim1.pos - (normal * prim1.radius), normal, prim1.radius + inr)
             return True
         return False
 
@@ -120,7 +124,7 @@ struct Collision:
         if 0.0 < dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
-            contact.set(prim1.pos, normal, rad_sum - distance)
+            contact.set(self, prim1.pos, normal, rad_sum - distance)
             return True
         return False
 
@@ -157,9 +161,9 @@ struct Collision:
             elif otr > lin_nom:
                 return self.detect_contact(prim1.end, prim2, contact)
             elif inr > 0:
-                contact.set(prim2.pos + (normal * prim2.radius), normal, prim2.radius - inr)
+                contact.set(self, prim2.pos + (normal * prim2.radius), normal, prim2.radius - inr)
             else:
-                contact.set(prim2.pos - (normal * prim2.radius), -normal, prim2.radius + inr)
+                contact.set(self, prim2.pos - (normal * prim2.radius), -normal, prim2.radius + inr)
             return True
         return False
 
@@ -199,6 +203,6 @@ struct Collision:
                 normal = -b_normal if a2_inr_b > 0 else b_normal
                 penetration = abs(a2_inr_b)
 
-            contact.set(position, normal, penetration)
+            contact.set(self, position, normal, penetration)
             return True
         return False

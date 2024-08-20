@@ -23,7 +23,7 @@ alias background_clear = Color(12, 8, 6, 0)
 struct Field:
     var gravity: g2.Multivector
     var _nodes: List[Node]
-    var _bodies: List[Body]
+    var _bodies: List[UnsafePointer[Body]]
     var _cameras: List[Camera]
     # var updateables: List[update_fn]
     # var renderables: List[render_fn]
@@ -32,7 +32,7 @@ struct Field:
     fn __init__(inout self):
         self.gravity = None
         self._nodes = List[Node]()
-        self._bodies = List[Body]()
+        self._bodies = List[UnsafePointer[Body]]()
         self._cameras = List[Camera]()
         # self.updateables = List[update_fn]()
 
@@ -40,7 +40,7 @@ struct Field:
     fn __init__(inout self, renderer: Renderer, gravity: g2.Multivector[]) raises:
         self.gravity = gravity
         self._nodes = List[Node](capacity=1000)
-        self._bodies = List[Body](capacity=1000)
+        self._bodies = List[UnsafePointer[Body]](capacity=1000)
         self._cameras = List[Camera](capacity=1000)
         # self.updateables = List[update_fn]()
         # self.renderables = List[render_fn]()
@@ -59,7 +59,9 @@ struct Field:
 
 
     fn __iadd__(inout self, owned body: Body):
-        self._bodies.append(body^)
+        var ptr = UnsafePointer[Body].alloc(1)
+        ptr.init_pointee_move(body)
+        self._bodies.append(ptr)
         # var _body = Reference(self._bodies[-1])
         # fn update(delta_time: Float64, key_state: List[Bool]):
         #     _body[].update(delta_time, key_state)
@@ -77,7 +79,9 @@ struct Field:
         _ = self._cameras.pop(self._cameras.index(camera))
 
     fn __isub__(inout self, body: Body) raises:
-        _ = self._bodies.pop(self._bodies.index(body))
+        var ptr = self._bodies.pop(self._bodies.index(UnsafePointer.address_of(body)))
+        ptr.destroy_pointee()
+        ptr.free()
 
     fn __isub__(inout self, node: Node) raises:
         _ = self._nodes.pop(self._nodes.index(node))
@@ -85,25 +89,24 @@ struct Field:
     # +------( Step )------+ #
     #
     fn step(inout self):
-        for body in self._bodies:
-            if body[].mass < 100000:
-                body[].color = Color(127, 127, 0, 255)
-                body[].dvel = (body[].dvel.v + self.gravity.v) + (body[].dvel.rotor() * self.gravity.rotor())
+        for b1 in range(len(self._bodies)):
 
-            for other_body in self._bodies:
-                if (body[].mass > 100000 and other_body[].mass > 100000):
-                    continue
+            if self._bodies[b1][].mass < 100000:
+                self._bodies[b1][].color = Color(127, 127, 0, 255)
+                self._bodies[b1][].dvel = self._bodies[b1][].dvel.trans(self.gravity)
 
-                if body == other_body:
+            for b2 in range(0, len(self._bodies)):
+
+                if b1 == b2 or (self._bodies[b1][].mass > 100000 and self._bodies[b2][].mass > 100000):
                     continue
                 
                 # aabb phase collision detection
-                if near(body[], other_body[]):
-                    body[].add_collision(other_body[])
+                if near(self._bodies[b1][], self._bodies[b2][]):
+                    self._bodies[b1][].add_collision(self._bodies[b1], self._bodies[b2])
 
-                # debug touching
-                if (body[].mass < 100000 and body != other_body and touching(body[].prims[0].body2field(body[]), other_body[].prims[0].body2field(other_body[]))):
-                    body[].color = Color(191, 63, 0, 255)
+                # # debug touching
+                # if (body[].mass < 100000 and body != other_body and touching(body[].prims[0].body2field(body[]), other_body[].prims[0].body2field(other_body[]))):
+                #     body[].color = Color(191, 63, 0, 255)
 
             # # debug touching
             # for other_node in self._nodes:
@@ -112,18 +115,18 @@ struct Field:
 
         # contact generation
         for body in self._bodies:
-            body[].detect_contacts()
+            body[][].detect_contacts()
 
         # solve
         alias iterations = 4
         @parameter
         for _ in range(iterations):
             for body in self._bodies:
-                body[].solve_contacts()
+                body[][].solve_contacts()
 
-        # simulate
+        # constrain pos
         for body in self._bodies:
-            body[].simulate()
+            body[][].step()
     
     # +------( Update )------+ #
     #
@@ -135,7 +138,7 @@ struct Field:
             node[].update(delta_time, keyboard)
 
         for body in self._bodies:
-            body[].update(self, delta_time, keyboard)
+            body[][].update(self, delta_time, keyboard)
 
         # for updateable in self.updateables:
         #     updateable[](delta_time, key_state)

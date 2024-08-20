@@ -20,12 +20,6 @@ def main():
     seed()
 
     field += Camera(renderer, g2.Rotor(10, 1), g2.Vector(0, 0), DRect[DType.float32](0.4, 0.0, 0.2, 0.2))
-
-    # field.nodes += Node(g2.Vector(100, 100), g2.Vector(), AABB(g2.Vector(-100, -100), g2.Vector(100, 100)))
-    # field.nodes += Node(g2.Vector(), g2.Vector(), g2.Vector())
-    # field.add_node(Node(g2.Vector(), g2.Vector(), Circle(100)))
-    # field.nodes += Node(g2.Vector(), g2.Vector(), Line(g2.Vector(-100, -100), g2.Vector(100, 100)))
-    # field.add_node(Node("", g2.Vector(), Primitive(Ray(g2.Vector(0, 0), g2.Vector(0, 100)))))
     field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Point(None)), mass=Float64.MAX, iner=Float64.MAX, color=Color(0, 255, 0, 255))
     # field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Circle(None, random_float64(20, 80))), mass=Float64.MAX, iner=Float64.MAX, color=sdl.Color(0, 255, 0, 255))
     # field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 0), 0.1), g2.Vector(random_float64(0, 200), 0))), mass=1000, color=sdl.Color(0, 255, 0, 255))
@@ -35,36 +29,15 @@ def main():
     field += Body(g2.Vector(1700, 500), Primitive(Line(g2.Vector(18000, -10000), g2.Vector(-16000, 10000))), mass=Float64.MAX, iner=Float64.MAX, color=Color(0, 255, 0, 255))
     # field += Body(g2.Vector(1700, 500), Primitive(Line(g2.Vector(0, -10000), g2.Vector(0, 10000))), mass=Float64.MAX, iner=Float64.MAX, color=sdl.Color(0, 255, 0, 255))
 
-    alias spd = 10
-
-    # for _ in range(6):
-    #     field.add_node(Node("", g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(AABB(g2.Vector(random_float64(-100, -10), random_float64(-100, -10)), g2.Vector(random_float64(10, 100), random_float64(10, 100))))))
-    # for _ in range(6):
-    #     field.add_node(Node("", g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Circle(None, random_float64(20, 80)))))
-    # for _ in range(6):
-    #     field.add_node(Node("", g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 200), random_float64(-200, 200)), g2.Vector(random_float64(-200, 200), random_float64(-200, 200))))))
-    
-    # for _ in range(6):
-    #     field.add_body(Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(AABB(g2.Vector(random_float64(-100, -10), random_float64(-100, -10)), g2.Vector(random_float64(10, 100), random_float64(10, 100))))))
-    
     # for _ in range(256):
     #     field += Body(g2.Vector(random_float64(100, 1500), random_float64(-1600, 900)), List[Primitive](Primitive(Circle(g2.Vector(random_float64(50, 0), 0), random_float64(20, 60))), Primitive(Circle(g2.Vector(random_float64(-50, 0), 0), random_float64(20, 60)))))
     
-    # for _ in range(128):
-    #     field.add_body(Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Circle(None, random_float64(20, 80)))))
-
     # for _ in range(16):
     #     field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 0), -100), g2.Vector(random_float64(0, 200), 0))))
     
     # for _ in range(1):
     #     field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 0), 100), g2.Vector(random_float64(0, 200), 0))))
 
-    # field.add_node(Node("movable", g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Circle(None, random_float64(20, 80)))))
-    # field.add_node(Node("movable", g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(AABB(g2.Vector(random_float64(-100, -10), random_float64(-100, -10)), g2.Vector(random_float64(10, 100), random_float64(10, 100))))))
-    # field.add_node(Node("movable", g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 200), random_float64(-200, 200)), g2.Vector(random_float64(-200, 200), random_float64(-200, 200))))))
-
-    # for _ in range(1):
-    #     field.nodes += Node(g2.Vector(random_float64(100, 900), random_float64(100, 900)), g2.Vector(0, 0), Ray(g2.Vector(random_float64(-400, 400), random_float64(-400, 400)), g2.Vector(random_float64(-400, 400), random_float64(-400, 400))))
     var spawn: Bool = False
     
     while running:
@@ -82,23 +55,23 @@ def main():
         var screen_cursor = mouse.get_position()
         var world_cursor = field._cameras[0].cam2field(g2.Vector(screen_cursor[0], screen_cursor[1]))
 
-        field._bodies[0].vel.v = (world_cursor - field._bodies[0].pos.v) * 0.2
-        field._bodies[0].pos.v = world_cursor
+        field._bodies[0][].vel.v = (world_cursor - field._bodies[0][].pos.v) * 0.2
+        field._bodies[0][].pos.v = world_cursor
 
         if spawn == True:
-            # field += Body(world_cursor, List[Primitive](Primitive(Circle(g2.Vector(random_float64(50, 0), 0), random_float64(20, 60))), Primitive(Circle(g2.Vector(random_float64(-50, 0), 0), random_float64(20, 60)))))
             field += Body(world_cursor, List[Primitive](
                 Primitive(Line(g2.Vector(-100, -100), g2.Vector(100, -100))), 
                 Primitive(Line(g2.Vector(100, -100), g2.Vector(100, 100))), 
                 Primitive(Line(g2.Vector(100, 100), g2.Vector(-100, 100))), 
                 Primitive(Line(g2.Vector(-100, 100), g2.Vector(-100, -100))),
-                Primitive(Circle(None, 100))
+                Primitive(Circle(None, 99))
                 ))
             spawn = False
 
         # field._nodes[0].prims[0]._data.unsafe_get[Ray]()[].dir = world_cursor
+
         field.step()
-        field._bodies[0].pos.v = world_cursor
+        field._bodies[0][].pos.v = world_cursor
         field.update(clock.delta_time, keyboard)
         field.draw(renderer)
         renderer.present()

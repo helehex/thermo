@@ -96,7 +96,7 @@ struct Camera:
             node[].draw(self, renderer)
 
         for body in field._bodies:
-            body[].draw(self, renderer)
+            body[][].draw(self, renderer)
 
 
         renderer.reset_target()

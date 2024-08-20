@@ -1,4 +1,9 @@
+# x--------------------------------------------------------------------------x #
+# | Copyright (c) 2024 Helehex
+# x--------------------------------------------------------------------------x #
+
 from collections import Optional
+
 
 @value
 struct Body:
@@ -25,7 +30,7 @@ struct Body:
     var elas: Float64
     var fric: Float64
 
-    var collisions: List[Optional[Collision]]
+    var collisions: List[UnsafePointer[Collision]]
 
     fn __init__(inout self, pos: g2.Vector[] = None, owned prims: List[Primitive] = Primitive(Circle(None, 1)), color: Color = Color(255, 255, 255, 255), vel: g2.Vector[] = None, mass: Float64 = 1, iner: Float64 = 10000):
         self.pos = pos + 1
@@ -41,8 +46,13 @@ struct Body:
         self.iner = iner
         self.elas = 0.5
         self.fric = 0.6
-        self.collisions = List[Optional[Collision]](capacity = 2048)
+        self.collisions = List[UnsafePointer[Collision]](capacity = 32)
         self.life = 10
+
+    fn __del__(owned self):
+        for collision in self.collisions:
+            collision[].destroy_pointee()
+            collision[].free()
 
     fn __aabb__(self) -> AABB:
         var result = AABB(Point(self.pos.v))
@@ -68,37 +78,30 @@ struct Body:
     fn apply_dpos_at(inout self, p: g2.Vector):
         pass
 
-    fn add_collision(inout self, other: Self):
-        var index = -1
-        for idx in range(len(self.collisions)):
-            if self.collisions[idx] and self.collisions[idx].unsafe_value().b2[] == other:
-                index = idx
-                break
+    fn add_collision(inout self, b1: UnsafePointer[Self], b2: UnsafePointer[Self]):
+        for collision in b1[].collisions:
+            if collision[][].b2 == b2:
+                collision[][].still_near = True
+                return
         
-        if index > -1:
-            self.collisions[index].unsafe_value().still_near = True
-        else:
-            for idx in range(len(self.collisions)):
-                if not self.collisions[idx]:
-                    self.collisions[idx] = Collision(self, other)
-                    self.collisions[idx].unsafe_value().blank_contacts()
-                    return
-            self.collisions.append(Collision(self, other))
-            self.collisions[-1].unsafe_value().blank_contacts()
+        var ptr = UnsafePointer[Collision].alloc(1)
+        ptr.init_pointee_move(Collision(b1, b2))
+        self.collisions += ptr
 
     fn detect_contacts(inout self):
-        for idx in range(len(self.collisions)):
-            if self.collisions[idx] and self.collisions[idx].unsafe_value().still_near:
-                self.collisions[idx].unsafe_value().detect()
+        for idx in reversed(range(len(self.collisions))):
+            if self.collisions[idx][].still_near:
+                self.collisions[idx][].detect()
             else:
-                self.collisions[idx] = None
+                var ptr = self.collisions.pop(idx)
+                ptr.destroy_pointee()
+                ptr.free()
 
     fn solve_contacts(inout self):
-        for collision in self.collisions:
-            if collision[]:
-                collision[].unsafe_value().solve()
+        for idx in range(len(self.collisions)):
+            self.collisions[idx][].solve()
 
-    fn simulate(inout self):
+    fn step(inout self):
         self.vel = (self.vel.v + self.dvel.v) + (self.vel.rotor() * self.dvel.rotor())
         self.dvel = 1
         self.pos = (self.pos.v + self.dpos.v + self.vel.v) + (self.pos.rotor() * self.dpos.rotor() * self.vel.rotor())
@@ -125,7 +128,7 @@ struct Body:
 
         for collision in self.collisions:
             if collision[]:
-                for contact in collision[].unsafe_value().contacts:
+                for contact in collision[][].contacts:
                     if contact[].penetration > 0:
                         var l = Line(g2.Vector(contact[].position.x, contact[].position.y), g2.Vector(contact[].position.x + (contact[].normal.x * contact[].penetration), contact[].position.y + (contact[].normal.y * contact[].penetration)))
                         l.draw(renderer, camera, self.color)

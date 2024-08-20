@@ -1,4 +1,14 @@
+# x--------------------------------------------------------------------------x #
+# | Copyright (c) 2024 Helehex
+# x--------------------------------------------------------------------------x #
+
 from math import atan2
+
+
+# TODO: FIX setting properties on b1 here has no effect...
+#       I'm not sure why, reading works fine, there's no
+#       copies of bodies anywhere... i have no idea... 
+#       It's causing issues with the impulse cache as well
 
 # TODO: Should not be using arg and angle,
 #       but velocity rotor is not normalized.
@@ -16,8 +26,8 @@ struct Contact:
     var b2o: g2.Vector
     var elas: Float64
 
-    fn __init__(inout self, collision: Collision):
-        self.collision = UnsafePointer[Collision].address_of(collision)
+    fn __init__(inout self):
+        self.collision = UnsafePointer[Collision]()
         self.position = None
         self.normal = None
         self.prepulse = None
@@ -27,21 +37,23 @@ struct Contact:
         self.invect = None
         self.elas = 0
 
-    fn set(inout self, position: g2.Vector[], normal: g2.Vector[], penetration: Float64):
-        var b1 = self.collision[].b1
-        var b2 = self.collision[].b2
+    fn set(inout self, collision: Collision, position: g2.Vector[], normal: g2.Vector[], penetration: Float64):
+        self.collision = UnsafePointer.address_of(collision)
+
+        var b1 = collision.b1
+        var b2 = collision.b2
         var v: g2.Vector
 
         self.position = position
         self.normal = normal
-        self.penetration = penetration
+        self.penetration = penetration / 2
 
         v = position - b1[].pos.v
         self.b1o = g2.Vector(v.outer(normal), -v.inner(normal))
         v = position - b2[].pos.v
         self.b2o = g2.Vector(v.outer(normal), -v.inner(normal))
 
-        self.elas = self.collision[].elas * ((b2[].vel.v - b1[].vel.v).inner(normal) - (b1[].vel.rotor().arg() * self.b1o.x) + (b2[].vel.rotor().arg() * self.b2o.x))
+        self.elas = self.collision[].elas * ((b2[].vel.v - b1[].vel.v).inner(normal) + (b2[].vel.rotor().arg() * self.b2o.x) - (b1[].vel.rotor().arg() * self.b1o.x))
 
         var b1v = g2.Vector(self.b1o.x * self.b1o.x, self.b1o.y * self.b1o.y) / b1[].iner
         var b2v = g2.Vector(self.b2o.x * self.b2o.x, self.b2o.y * self.b2o.y) / b2[].iner
@@ -71,20 +83,8 @@ struct Contact:
         var b1r = b1[].vel.rotor().arg() + b1[].dvel.rotor().arg()
         var b2r = b2[].vel.rotor().arg() + b2[].dvel.rotor().arg()
 
-        # solve velocity normal
-        i = (self.elas + ((b2[].vel.v + b2[].dvel.v) - (b1[].vel.v + b1[].dvel.v)).inner(self.normal) - (b1r * self.b1o.x) + (b2r * self.b2o.x)) * self.invect.x
-        f = max(0, n + i)
-        i = f - n
-        n = f
-        v = self.normal * i
-        b1[].dvel = (b1[].dvel).trans((v/b1[].mass) + g2.Rotor(angle=(self.b1o.x*i)/b1[].iner))
-        b2[].dvel = (b2[].dvel).trans(((v/b2[].mass) + g2.Rotor(angle=(self.b2o.x*i)/b2[].iner)).coj())
-
-        b1r = b1[].vel.rotor().arg() + b1[].dvel.rotor().arg()
-        b2r = b2[].vel.rotor().arg() + b2[].dvel.rotor().arg()
-
         # solve velocity tangent
-        i = (((b2[].vel.v + b2[].dvel.v) - (b1[].vel.v + b1[].dvel.v)).inner(tangent) - (b1r * self.b1o.y) + (b2r * self.b2o.y)) * self.invect.y
+        i = (((b2[].vel.v + b2[].dvel.v) - (b1[].vel.v + b1[].dvel.v)).inner(tangent) + (b2r * self.b2o.y) - (b1r * self.b1o.y)) * self.invect.y
         var clmp = self.prepulse.x * self.collision[].fric
         f = min(max(t + i, -clmp), clmp)
         i = f - t
@@ -93,11 +93,24 @@ struct Contact:
         b1[].dvel = (b1[].dvel).trans((v/b1[].mass) + g2.Rotor(angle=(self.b1o.y*i)/b1[].iner))
         b2[].dvel = (b2[].dvel).trans(((v/b2[].mass) + g2.Rotor(angle=(self.b2o.y*i)/b2[].iner)).coj())
 
+        b1r = b1[].vel.rotor().arg() + b1[].dvel.rotor().arg()
+        b2r = b2[].vel.rotor().arg() + b2[].dvel.rotor().arg()
+
+        # solve velocity normal
+        i = (self.elas + ((b2[].vel.v + b2[].dvel.v) - (b1[].vel.v + b1[].dvel.v)).inner(self.normal) + (b2r * self.b2o.x) - (b1r * self.b1o.x)) * self.invect.x
+        f = max(0, n + i)
+        i = f - n
+        n = f
+        v = self.normal * i
+        b1[].dvel = (b1[].dvel).trans((v/b1[].mass) + g2.Rotor(angle=(self.b1o.x*i)/b1[].iner))
+        b2[].dvel = (b2[].dvel).trans(((v/b2[].mass) + g2.Rotor(angle=(self.b2o.x*i)/b2[].iner)).coj())
+
         # cache prepulse
         self.prepulse = g2.Vector(n, t)
 
         # solve position normal
-        i = (self.penetration + (b2[].dpos.v - b1[].dpos.v).inner(self.normal) - (b1[].dpos.rotor().arg() * self.b1o.x) + (b2[].dpos.rotor().arg() * self.b2o.x)) * self.invect.x
+        # i = (self.penetration + ((b2[].dpos.v + b2[].dvel.v) - (b1[].dpos.v + b1[].dvel.v)).inner(self.normal) + ((b2[].dpos.rotor().arg() + b2[].dvel.rotor().arg()) * self.b2o.x) - ((b1[].dpos.rotor().arg() + b1[].dvel.rotor().arg()) * self.b1o.x)) * self.invect.x
+        i = (self.penetration + (b2[].dpos.v - b1[].dpos.v).inner(self.normal) + (b2[].dpos.rotor().arg() * self.b2o.x) - (b1[].dpos.rotor().arg() * self.b1o.x)) * self.invect.x
         i = max(0, i)
         v = self.normal * i
         b1[].dpos = b1[].dpos.trans((v/b1[].mass) + g2.Rotor(angle=(self.b1o.x*i)/b1[].iner))
