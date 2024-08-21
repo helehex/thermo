@@ -35,9 +35,9 @@ struct Point:
     fn draw(self, renderer: Renderer, cam: Camera, node: Node) raises:
         self.node2field(node).draw(renderer, cam, node.color)
 
-    fn draw(self, renderer: Renderer, cam: Camera, color: mojo_sdl.Color) raises:
+    fn draw(self, renderer: Renderer, cam: Camera, color: Color) raises:
         self.field2cam(cam).draw(renderer, color)
 
-    fn draw(self, renderer: Renderer, color: mojo_sdl.Color) raises:
+    fn draw(self, renderer: Renderer, color: Color) raises:
         renderer.set_color(color)
         renderer.draw_point(self.pos.x.cast[DType.float32](), self.pos.y.cast[DType.float32]())

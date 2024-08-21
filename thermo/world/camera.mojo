@@ -17,7 +17,7 @@ struct Camera:
         self.transform = transform
         self.pivot = pivot
         var size = renderer.get_output_size()
-        self.target = Texture(renderer, mojo_sdl.TexturePixelFormat.RGBA8888, mojo_sdl.TextureAccess.TARGET, int(size[0] * viewport.w), int(size[1] * viewport.h))
+        self.target = Texture(renderer, sdl.TexturePixelFormat.RGBA8888, sdl.TextureAccess.TARGET, int(size[0] * viewport.w), int(size[1] * viewport.h))
         self.frame_count = 0
         self.viewport = viewport.cast[DType.float32]()
         self.is_main_camera = False

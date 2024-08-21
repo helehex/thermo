@@ -9,4 +9,4 @@ from .physics import *
 
 from infrared.hard import g2
 
-from mojo_sdl import Renderer, Texture, Keyboard, KeyCode, Color, DPoint, DRect
+from sdl import Renderer, Texture, Keyboard, KeyCode, Color, DPoint, DRect

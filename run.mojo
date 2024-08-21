@@ -1,6 +1,6 @@
 from random import random_float64, seed
 from infrared.hard import g2
-import mojo_sdl
+import sdl as mojo_sdl
 from thermo import *
 
 alias screen_width = 1600
@@ -10,9 +10,9 @@ alias screen_height = 1000
 def main():
     var sdl = mojo_sdl.SDL(video=True, timer=True, events=True)
     var window = mojo_sdl.Window(sdl, "Thermo", screen_width, screen_height)
-    var keyboard = mojo_sdl.Keyboard(sdl)
+    var keyboard = Keyboard(sdl)
     var mouse = mojo_sdl.Mouse(sdl)
-    var renderer = mojo_sdl.Renderer(window^, flags = mojo_sdl.RendererFlags.SDL_RENDERER_ACCELERATED)
+    var renderer = Renderer(window^, flags = mojo_sdl.RendererFlags.SDL_RENDERER_ACCELERATED)
     var clock = mojo_sdl.Clock(sdl, 1000)
     var running = True
 
