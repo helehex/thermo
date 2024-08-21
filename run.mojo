@@ -8,7 +8,7 @@ alias screen_height = 1000
 
 
 def main():
-    var sdl = mojo_sdl.SDL(video=True, timer=True, events=True)
+    var sdl = mojo_sdl.SDL(video=True, timer=True, events=True, gfx=True)
     var window = mojo_sdl.Window(sdl, "Thermo", screen_width, screen_height)
     var keyboard = Keyboard(sdl)
     var mouse = mojo_sdl.Mouse(sdl)
