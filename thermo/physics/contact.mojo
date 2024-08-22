@@ -31,13 +31,13 @@ struct Contact:
         self.position = None
         self.normal = None
         self.prepulse = None
-        self.penetration = 0
+        self.penetration = slop
         self.b1o = None
         self.b2o = None
         self.invect = None
         self.elas = 0
 
-    fn set(inout self, collision: Collision, position: g2.Vector[], normal: g2.Vector[], penetration: Float64):
+    fn __init__(inout self, collision: Collision, position: g2.Vector[], normal: g2.Vector[], penetration: Float64):
         self.collision = UnsafePointer.address_of(collision)
 
         var b1 = collision.b1
@@ -47,6 +47,7 @@ struct Contact:
         self.position = position
         self.normal = normal
         self.penetration = penetration / 2
+        self.prepulse = None
 
         v = position - b1[].pos.v
         self.b1o = g2.Vector(v.outer(normal), -v.inner(normal))

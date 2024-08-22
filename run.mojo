@@ -1,6 +1,6 @@
 from random import random_float64, seed
 from infrared.hard import g2
-import sdl as mojo_sdl
+from sdl import *
 from thermo import *
 
 alias screen_width = 1600
@@ -8,19 +8,19 @@ alias screen_height = 1000
 
 
 def main():
-    var sdl = mojo_sdl.SDL(video=True, timer=True, events=True, gfx=True)
-    var window = mojo_sdl.Window(sdl, "Thermo", screen_width, screen_height)
+    var sdl = SDL(video=True, timer=True, events=True, gfx=True)
+    var window = Window(sdl, "Thermo", screen_width, screen_height)
     var keyboard = Keyboard(sdl)
-    var mouse = mojo_sdl.Mouse(sdl)
-    var renderer = Renderer(window^, flags = mojo_sdl.RendererFlags.SDL_RENDERER_ACCELERATED)
-    var clock = mojo_sdl.Clock(sdl, 1000)
+    var mouse = Mouse(sdl)
+    var renderer = Renderer(window^, flags = RendererFlags.SDL_RENDERER_ACCELERATED)
+    var clock = Clock(sdl, 1000)
     var running = True
 
-    var field = Field(renderer, g2.Vector(0, 0.1) + 1.0)#g2.Multivector(1.00001, 0, 0, 0.00001))
+    var field = Field(renderer, g2.Vector(0, 0.1) + 1.0) #g2.Multivector(1.00001, 0, 0, 0.00001))
     seed()
 
     field += Camera(renderer, g2.Rotor(10, 1), g2.Vector(0, 0), DRect[DType.float32](0.4, 0.0, 0.2, 0.2))
-    field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Point(None)), mass=Float64.MAX, iner=Float64.MAX, color=Color(0, 255, 0, 255))
+    field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(thermo.Point(None)), mass=Float64.MAX, iner=Float64.MAX, color=Color(0, 255, 0, 255))
     # field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Circle(None, random_float64(20, 80))), mass=Float64.MAX, iner=Float64.MAX, color=sdl.Color(0, 255, 0, 255))
     # field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 0), 0.1), g2.Vector(random_float64(0, 200), 0))), mass=1000, color=sdl.Color(0, 255, 0, 255))
     
@@ -42,12 +42,12 @@ def main():
     
     while running:
         for event in sdl.event_list():
-            if event[].isa[mojo_sdl.events.QuitEvent]():
+            if event[].isa[events.QuitEvent]():
                 running = False
-            if event[].isa[mojo_sdl.events.MouseButtonEvent]():
-                if event[].unsafe_get[mojo_sdl.events.MouseButtonEvent]()[].clicks == 1 and event[].unsafe_get[mojo_sdl.events.MouseButtonEvent]()[].state == 1:
+            if event[].isa[events.MouseButtonEvent]():
+                if event[].unsafe_get[events.MouseButtonEvent]()[].clicks == 1 and event[].unsafe_get[events.MouseButtonEvent]()[].state == 1:
                     spawn = True
-                elif event[].unsafe_get[mojo_sdl.events.MouseButtonEvent]()[].state == 0:
+                elif event[].unsafe_get[events.MouseButtonEvent]()[].state == 0:
                     spawn = False
                     
         clock.tick()

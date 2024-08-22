@@ -6,3 +6,5 @@ from .body import *
 from .collision import *
 from .detection import *
 from .contact import *
+
+alias slop = -0.001

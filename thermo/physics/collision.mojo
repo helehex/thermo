@@ -2,8 +2,6 @@
 # | Copyright (c) 2024 Helehex
 # x--------------------------------------------------------------------------x #
 
-alias slop = -0.001
-
 
 @value
 struct Collision:
@@ -31,8 +29,9 @@ struct Collision:
         var contact_id = 0
         for prim1 in self.b1[].prims:
             for prim2 in self.b2[].prims:
-                    if not self.detect_contact(prim1[].body2field(self.b1[]), prim2[].body2field(self.b2[]), self.contacts[contact_id]):
-                        self.contacts[contact_id].penetration = slop
+                    var prepulse = self.contacts[contact_id].prepulse
+                    self.contacts[contact_id] = self.detect_contact(prim1[].body2field(self.b1[]), prim2[].body2field(self.b2[]))
+                    self.contacts[contact_id].prepulse = prepulse
                     contact_id += 1
 
         for contact in self.contacts:
@@ -44,49 +43,47 @@ struct Collision:
             if self.contacts[idx].penetration > slop:
                 self.contacts[idx].solve()
 
-    fn detect_contact(self, prim1: Primitive, prim2: Primitive, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Primitive, prim2: Primitive) -> Contact:
         if prim1._data.isa[Circle]():
-            return self.detect_contact(prim1._data.unsafe_get[Circle]()[], prim2, contact)
+            return self.detect_contact(prim1._data.unsafe_get[Circle]()[], prim2)
         if prim1._data.isa[Point]():
-            return self.detect_contact(prim1._data.unsafe_get[Point]()[], prim2, contact)
+            return self.detect_contact(prim1._data.unsafe_get[Point]()[], prim2)
         if prim1._data.isa[Line]():
-            return self.detect_contact(prim1._data.unsafe_get[Line]()[], prim2, contact)
-        return False
+            return self.detect_contact(prim1._data.unsafe_get[Line]()[], prim2)
+        return Contact()
 
-    fn detect_contact(self, prim1: Circle, prim2: Primitive, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Circle, prim2: Primitive) -> Contact:
         if prim2._data.isa[Circle]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Circle]()[], contact)
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Circle]()[])
         elif prim2._data.isa[Point]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Point]()[], contact)
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Point]()[])
         elif prim2._data.isa[Line]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Line]()[], contact)
-        return False
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Line]()[])
+        return Contact()
         
-    fn detect_contact(self, prim1: Circle, prim2: Circle, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Circle, prim2: Circle) -> Contact:
         var rel = prim1.pos - prim2.pos
         var rad_sum = prim1.radius + prim2.radius
         var dis_sqr = rel.inn()
         if dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
-            contact.set(self, prim2.pos + (normal * prim2.radius), normal, rad_sum - distance)
-            return True
-        return False
+            return Contact(self, prim2.pos + (normal * prim2.radius), normal, rad_sum - distance)
+        return Contact()
 
-    fn detect_contact(self, prim1: Circle, prim2: Point, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Circle, prim2: Point) -> Contact:
         var rel = prim1.pos - prim2.pos
         var rad_sum = prim1.radius
         var dis_sqr = rel.inn()
         if dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
-            contact.set(self, prim2.pos, normal, rad_sum - distance)
-            return True
-        return False
+            return Contact(self, prim2.pos, normal, rad_sum - distance)
+        return Contact()
 
-    fn detect_contact(self, prim1: Circle, prim2: Line, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Circle, prim2: Line) -> Contact:
         if prim2.beg == prim2.end:
-            return self.detect_contact(prim1, prim2.beg, contact)
+            return self.detect_contact(prim1, prim2.beg)
 
         var rel = prim2.beg - prim1.pos
         var lin_rel = prim2.end - prim2.beg
@@ -98,54 +95,52 @@ struct Collision:
             var otr = rel.outer(normal)
 
             if otr < 0:
-                return self.detect_contact(prim1, prim2.beg, contact)
+                return self.detect_contact(prim1, prim2.beg)
             elif otr > lin_nom:
-                return self.detect_contact(prim1, prim2.end, contact)
+                return self.detect_contact(prim1, prim2.end)
             elif inr > 0:
-                contact.set(self, prim1.pos + (normal * prim1.radius), -normal, prim1.radius - inr)
+                return Contact(self, prim1.pos + (normal * prim1.radius), -normal, prim1.radius - inr)
             else:
-                contact.set(self, prim1.pos - (normal * prim1.radius), normal, prim1.radius + inr)
-            return True
-        return False
+                return Contact(self, prim1.pos - (normal * prim1.radius), normal, prim1.radius + inr)
+        return Contact()
 
-    fn detect_contact(self, prim1: Point, prim2: Primitive, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Point, prim2: Primitive) -> Contact:
         if prim2._data.isa[Circle]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Circle]()[], contact)
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Circle]()[])
         elif prim2._data.isa[Point]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Point]()[], contact)
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Point]()[])
         elif prim2._data.isa[Line]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Line]()[], contact)
-        return False
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Line]()[])
+        return Contact()
 
-    fn detect_contact(self, prim1: Point, prim2: Circle, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Point, prim2: Circle) -> Contact:
         var rel = prim1.pos - prim2.pos
         var rad_sum = prim2.radius
         var dis_sqr = rel.inn()
         if 0.0 < dis_sqr < rad_sum * rad_sum:
             var distance = sqrt(dis_sqr)
             var normal = rel / distance
-            contact.set(self, prim1.pos, normal, rad_sum - distance)
-            return True
-        return False
+            return Contact(self, prim1.pos, normal, rad_sum - distance)
+        return Contact()
 
-    fn detect_contact(self, prim1: Point, prim2: Point, inout contact: Contact) -> Bool:
-        return False
+    fn detect_contact(self, prim1: Point, prim2: Point) -> Contact:
+        return Contact()
 
-    fn detect_contact(self, prim1: Point, prim2: Line, inout contact: Contact) -> Bool:
-        return False
+    fn detect_contact(self, prim1: Point, prim2: Line) -> Contact:
+        return Contact()
 
-    fn detect_contact(self, prim1: Line, prim2: Primitive, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Line, prim2: Primitive) -> Contact:
         if prim2._data.isa[Circle]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Circle]()[], contact)
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Circle]()[])
         elif prim2._data.isa[Point]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Point]()[], contact)
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Point]()[])
         elif prim2._data.isa[Line]():
-            return self.detect_contact(prim1, prim2._data.unsafe_get[Line]()[], contact)
-        return False
+            return self.detect_contact(prim1, prim2._data.unsafe_get[Line]()[])
+        return Contact()
 
-    fn detect_contact(self, prim1: Line, prim2: Circle, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Line, prim2: Circle) -> Contact:
         if prim1.beg == prim1.end:
-            return self.detect_contact(prim1.beg, prim2, contact)
+            return self.detect_contact(prim1.beg, prim2)
 
         var rel = prim1.beg - prim2.pos
         var lin_rel = prim1.end - prim1.beg
@@ -157,20 +152,19 @@ struct Collision:
             var otr = rel.outer(normal)
 
             if otr < 0:
-                return self.detect_contact(prim1.beg, prim2, contact)
+                return self.detect_contact(prim1.beg, prim2)
             elif otr > lin_nom:
-                return self.detect_contact(prim1.end, prim2, contact)
+                return self.detect_contact(prim1.end, prim2)
             elif inr > 0:
-                contact.set(self, prim2.pos + (normal * prim2.radius), normal, prim2.radius - inr)
+                return Contact(self, prim2.pos + (normal * prim2.radius), normal, prim2.radius - inr)
             else:
-                contact.set(self, prim2.pos - (normal * prim2.radius), -normal, prim2.radius + inr)
-            return True
-        return False
+                return Contact(self, prim2.pos - (normal * prim2.radius), -normal, prim2.radius + inr)
+        return Contact()
 
-    fn detect_contact(self, prim1: Line, prim2: Point, inout contact: Contact) -> Bool:
-        return False
+    fn detect_contact(self, prim1: Line, prim2: Point) -> Contact:
+        return Contact()
 
-    fn detect_contact(self, prim1: Line, prim2: Line, inout contact: Contact) -> Bool:
+    fn detect_contact(self, prim1: Line, prim2: Line) -> Contact:
         var rp: g2.Vector[]
         var a_normal = prim1.normal()
         var b_normal = prim2.normal()
@@ -203,6 +197,5 @@ struct Collision:
                 normal = -b_normal if a2_inr_b > 0 else b_normal
                 penetration = abs(a2_inr_b)
 
-            contact.set(self, position, normal, penetration)
-            return True
-        return False
+            return Contact(self, position, normal, penetration)
+        return Contact()
