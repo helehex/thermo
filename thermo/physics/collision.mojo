@@ -31,7 +31,8 @@ struct Collision:
             for prim2 in self.b2[].prims:
                     var prepulse = self.contacts[contact_id].prepulse
                     self.contacts[contact_id] = self.detect_contact(prim1[].body2field(self.b1[]), prim2[].body2field(self.b2[]))
-                    self.contacts[contact_id].prepulse = prepulse
+                    if self.contacts[contact_id].penetration > slop:
+                        self.contacts[contact_id].prepulse = prepulse
                     contact_id += 1
 
         for contact in self.contacts:
