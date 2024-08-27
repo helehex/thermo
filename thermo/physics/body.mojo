@@ -32,20 +32,17 @@ struct Body:
 
     var collisions: List[UnsafePointer[Collision]]
 
-    fn __init__(inout self, pos: g2.Vector[] = None, owned prims: List[Primitive] = Primitive(Circle(None, 1)), color: Color = Color(255, 255, 255, 255), vel: g2.Vector[] = None, mass: Float64 = 1, iner: Float64 = 10000):
+    fn __init__(inout self, pos: g2.Vector[] = None, owned prims: List[Primitive] = Primitive(Circle(None, 1)), color: Color = Color(255, 255, 255, 255), vel: g2.Vector[] = None, mass: Float64 = 1, iner: Float64 = 10000, elas: Float64 = 0.5, fric: Float64 = 0.5):
         self.pos = pos + 1
         self.prims = prims
         self.color = color
         self.dpos = 1
-        if mass > 100000:
-            self.vel = vel + 1
-        else:
-            self.vel = vel + g2.Rotor(1.0, 0)
+        self.vel = vel + 1
         self.dvel = 1
         self.mass = mass
         self.iner = iner
-        self.elas = 0.5
-        self.fric = 0.6
+        self.elas = elas
+        self.fric = fric
         self.collisions = List[UnsafePointer[Collision]](capacity = 32)
         self.life = 10
 

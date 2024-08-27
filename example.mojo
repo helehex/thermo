@@ -55,7 +55,7 @@ def main():
         var screen_cursor = mouse.get_position()
         var world_cursor = field._cameras[0].cam2field(g2.Vector(screen_cursor[0], screen_cursor[1]))
 
-        field._bodies[0][].vel.v = (world_cursor - field._bodies[0][].pos.v) * 0.2
+        field._bodies[0][].vel.v = (world_cursor - field._bodies[0][].pos.v) * 0.25
         field._bodies[0][].pos.v = world_cursor
 
         if spawn == True:
