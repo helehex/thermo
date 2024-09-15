@@ -1,3 +1,2 @@
-**/temp.**
-**/temp/
-/assets
+# ignore environments
+.magic
