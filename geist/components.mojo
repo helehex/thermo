@@ -21,3 +21,8 @@ struct VelocityComponent:
 @register_passable("trivial")
 struct SpriteComponent:
     var sprite: UnsafePointer[Texture]
+
+@value
+@register_passable("trivial")
+struct ControlledComponent:
+    var speed: Float64

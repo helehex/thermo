@@ -11,49 +11,6 @@ struct Camera:
     fn world2camera(self, world: World, pos: g2.Vector[]) -> g2.Vector[]:
         return ((pos - world.position_components[self.entity.id].unsafe_value()[].position) / world.rotation_components[self.entity.id].unsafe_value()[].rotation)
 
-    fn update[lif: ImmutableLifetime](inout self, game: UnsafePointer[Game[lif]], delta_time: Float64):
-
-        # rotation
-        var angle = 0
-        alias rot_speed = 0.5
-
-        if game[].keyboard.state[KeyCode.Q]:
-            angle -= 1
-        if game[].keyboard.state[KeyCode.E]:
-            angle += 1
-
-        # zoom
-        var zoom = 0
-
-        if game[].keyboard.state[KeyCode.LSHIFT]:
-            zoom -= 1
-        if game[].keyboard.state[KeyCode.SPACE]:
-            zoom += 1
-
-        var rot = g2.Rotor(
-            angle=angle * delta_time * rot_speed
-        ) * (1 + (zoom * delta_time))
-
-        # position
-        var mov = g2.Vector()
-        alias mov_speed = 1000
-
-        if game[].keyboard.state[KeyCode.A]:
-            mov.x -= 1
-        if game[].keyboard.state[KeyCode.D]:
-            mov.x += 1
-        if game[].keyboard.state[KeyCode.W]:
-            mov.y -= 1
-        if game[].keyboard.state[KeyCode.S]:
-            mov.y += 1
-
-        if not mov.is_zero():
-            mov = (mov / mov.nom()) * game[].world.rotation_components[self.entity.id].unsafe_value()[].rotation * delta_time * mov_speed
-
-        var new_transform = (game[].world.position_components[self.entity.id].unsafe_value()[].position + game[].world.rotation_components[self.entity.id].unsafe_value()[].rotation).trans(mov + rot)
-        UnsafePointer.address_of(game[].world.position_components[self.entity.id].unsafe_value()[])[] = new_transform.vector()
-        UnsafePointer.address_of(game[].world.rotation_components[self.entity.id].unsafe_value()[])[] = new_transform.rotor()
-
     fn draw(self, world: World, renderer: Renderer) raises:
         renderer.set_target(self.target)
         renderer.set_color(clear_color)
