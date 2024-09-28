@@ -1,5 +1,16 @@
 from pathlib import Path
 from collections import Optional
+from .controlled import ControlledComponent, controlled_system
+
+
+@value
+struct GameInfo:
+    var game_name: String
+
+    # default game info
+    fn __init__(inout self):
+        self.game_name = "My Game"
+
 
 struct Game[sdl_lif: ImmutableLifetime]:
     var _sdl: Reference[sdl.SDL, sdl_lif]
@@ -14,9 +25,9 @@ struct Game[sdl_lif: ImmutableLifetime]:
     var running: Bool
     var world: World
 
-    fn __init__(inout self, ref[sdl_lif]_sdl: sdl.SDL) raises:
+    fn __init__(inout self, ref[sdl_lif]_sdl: sdl.SDL, info: GameInfo = GameInfo()) raises:
         self._sdl = _sdl
-        var window = sdl.Window(_sdl, "Thermo", 800, 600)
+        var window = sdl.Window(_sdl, info.game_name, 800, 600)
         self.renderer = sdl.Renderer(window^)
         self.keyboard = sdl.Keyboard(_sdl)
         self.mouse = sdl.Mouse(_sdl)
@@ -65,54 +76,10 @@ struct Game[sdl_lif: ImmutableLifetime]:
         if controlled:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
 
+    @always_inline
     fn register_update[func: fn [lif: ImmutableLifetime](inout Game[lif]) -> None](owned self) -> Self:
         self.update_fns += func[sdl_lif]
         return self^
-
-    fn controlled_system(inout self):
-        for idx in range(len(self.world.controlled_components._data)):
-            # rotation
-            var angle = 0
-            alias rot_speed = 0.5
-
-            if self.keyboard.state[KeyCode.Q]:
-                angle -= 1
-            if self.keyboard.state[KeyCode.E]:
-                angle += 1
-
-            # zoom
-            var zoom = 0
-
-            if self.keyboard.state[KeyCode.LSHIFT]:
-                zoom -= 1
-            if self.keyboard.state[KeyCode.SPACE]:
-                zoom += 1
-
-            var rot = g2.Rotor(
-                angle=angle * self.clock.delta_time * rot_speed
-            ) * (1 + (zoom * self.clock.delta_time))
-
-            # position
-            var mov = g2.Vector()
-            var mov_speed = self.world.controlled_components[idx].unsafe_value()[].speed
-
-            if self.keyboard.state[KeyCode.A]:
-                mov.x -= 1
-            if self.keyboard.state[KeyCode.D]:
-                mov.x += 1
-            if self.keyboard.state[KeyCode.W]:
-                mov.y -= 1
-            if self.keyboard.state[KeyCode.S]:
-                mov.y += 1
-
-            var entity_id = self.world.controlled_components._idx2lbl[idx]
-
-            if not mov.is_zero():
-                mov = (mov / mov.nom()) * self.world.rotation_components[entity_id].unsafe_value()[].rotation * self.clock.delta_time * mov_speed
-
-            var new_transform = (self.world.position_components[entity_id].unsafe_value()[].position + self.world.rotation_components[entity_id].unsafe_value()[].rotation).trans(mov + rot)
-            self.world.position_components[entity_id].unsafe_value()[] = new_transform.vector()
-            self.world.rotation_components[entity_id].unsafe_value()[] = new_transform.rotor()
 
     fn run(owned self) raises:
         while self.running:
@@ -123,6 +90,6 @@ struct Game[sdl_lif: ImmutableLifetime]:
                 update_fn[](self)
             for camera in self.world.cameras:
                 camera[].draw(self.world, self.renderer)
-            self.controlled_system()
+            controlled_system(self)
             self.renderer.present()
             self.clock.tick()

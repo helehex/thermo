@@ -1,5 +1,6 @@
 from .label_map import LabelMap
 from .camera import Camera
+from .controlled import ControlledComponent
 
 @value
 struct World:

@@ -33,3 +33,6 @@ struct LabelMap[Type: CollectionElement]:
             self._lbl2idx[lbl] = -1
             self._idx2lbl[self._lbl2idx[lbl]] = self._idx2lbl.pop()
 
+    @always_inline
+    fn __len__(self) -> Int:
+        return self._data.__len__()
