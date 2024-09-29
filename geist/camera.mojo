@@ -16,15 +16,20 @@ struct Camera:
         renderer.set_color(clear_color)
         renderer.clear()
 
+        tex_w = UnsafePointer[IntC].alloc(1)
+        tex_h = UnsafePointer[IntC].alloc(1)
+
         for idx in range(len(world.sprite_components._data)):
-            tex_w = UnsafePointer[IntC].alloc(1)
-            tex_h = UnsafePointer[IntC].alloc(1)
             renderer.sdl[]._sdl.query_texture(world.sprite_components._data[idx].sprite[]._texture_ptr, UnsafePointer[UInt32](), UnsafePointer[IntC](), tex_w, tex_h)
             sprite2camera = self.world2camera(world, world.position_components[world.sprite_components._idx2lbl[idx]].unsafe_value()[].position)
-            var rot = world.rotation_components[self.entity.id].unsafe_value()[].rotation
+            var rot = world.rotation_components[self.entity.id].unsafe_value()[].rotation / world.rotation_components[world.sprite_components._idx2lbl[idx]].unsafe_value()[].rotation
             var scale = rot.nom()
             var angle = -rot.arg() * 180 / stdlib.math.pi
-            renderer.copy(world.sprite_components._data[idx].sprite[], None, Rect(sprite2camera.x, sprite2camera.y, tex_w[].cast[DType.float64]() / scale, tex_h[].cast[DType.float64]() / scale), angle, Point(tex_w[]/2, tex_h[]/2), RendererFlip{value:RendererFlip.NONE})
+            var sprite_scale = (tex_w[].cast[DType.float64]() / scale, tex_h[].cast[DType.float64]() / scale)
+            renderer.copy(world.sprite_components._data[idx].sprite[], None, Rect(sprite2camera.x - sprite_scale[0]/2, sprite2camera.y - sprite_scale[1]/2, sprite_scale[0], sprite_scale[1]), angle, Point(sprite_scale[0]/2, sprite_scale[1]/2), RendererFlip{value:RendererFlip.NONE})
+        
+        tex_w.free()
+        tex_h.free()
 
         renderer.reset_target()
         renderer.copy(self.target, None)

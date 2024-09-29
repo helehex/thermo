@@ -19,6 +19,7 @@ struct Game[sdl_lif: ImmutableLifetime]:
     var mouse: sdl.Mouse[sdl_lif]
     var clock: sdl.Clock[sdl_lif]
 
+    var start_fns: List[fn (inout Game[sdl_lif]) -> None]
     var update_fns: List[fn (inout Game[sdl_lif]) -> None]
     var sprites: List[sdl.Texture]
 
@@ -32,29 +33,32 @@ struct Game[sdl_lif: ImmutableLifetime]:
         self.keyboard = sdl.Keyboard(_sdl)
         self.mouse = sdl.Mouse(_sdl)
         self.clock = sdl.Clock(_sdl, 1000)
+        self.start_fns = List[fn (inout Game[sdl_lif]) -> None]()
         self.update_fns = List[fn (inout Game[sdl_lif]) -> None]()
         self.sprites = List[sdl.Texture]()
         self.running = True
         self.world = World()
 
+    @always_inline
     fn __moveinit__(inout self, owned other: Self):
         self._sdl = other._sdl
         self.renderer = other.renderer^
         self.keyboard = sdl.Keyboard(self._sdl[])
         self.mouse = sdl.Mouse(self._sdl[])
         self.clock = other.clock^
+        self.start_fns = other.start_fns^
         self.update_fns = other.update_fns^
         self.sprites = other.sprites^
         self.running = other.running
         self.world = other.world^
 
-    fn add_sprite(owned self, path: Path) raises -> Self:
+    fn register_sprite(owned self, path: Path) raises -> Self:
         self.sprites += sdl.Texture(self.renderer, sdl.Surface(self._sdl[], self._sdl[].img.load_image(path.path.unsafe_cstr_ptr().bitcast[DType.uint8]())))
         return self^
 
-    fn add_sprites(owned self, *paths: Path) raises -> Self:
+    fn register_sprites(owned self, *paths: Path) raises -> Self:
         for path in paths:
-            self = self^.add_sprite(path[])
+            self = self^.register_sprite(path[])
         return self^
 
     fn create_camera(owned self, controlled: Optional[ControlledComponent] = None) raises -> Self:
@@ -77,11 +81,19 @@ struct Game[sdl_lif: ImmutableLifetime]:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
 
     @always_inline
+    fn register_start[func: fn [lif: ImmutableLifetime](inout Game[lif]) -> None](owned self) -> Self:
+        self.start_fns += func[sdl_lif]
+        return self^
+
+    @always_inline
     fn register_update[func: fn [lif: ImmutableLifetime](inout Game[lif]) -> None](owned self) -> Self:
         self.update_fns += func[sdl_lif]
         return self^
 
     fn run(owned self) raises:
+        for start_fn in self.start_fns:
+            start_fn[](self)
+        
         while self.running:
             for event in self._sdl[].event_list():
                 if event[].isa[sdl.events.QuitEvent]():
