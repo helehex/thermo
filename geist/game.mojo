@@ -6,10 +6,12 @@ from .controlled import ControlledComponent, controlled_system
 @value
 struct GameInfo:
     var game_name: String
+    var window_size: g2.Vector[DType.int32]
 
     # default game info
     fn __init__(inout self):
         self.game_name = "My Game"
+        self.window_size = g2.Vector[DType.int32](800, 600)
 
 
 struct Game[sdl_lif: ImmutableLifetime]:
@@ -17,10 +19,12 @@ struct Game[sdl_lif: ImmutableLifetime]:
     var renderer: sdl.Renderer[sdl_lif]
     var keyboard: sdl.Keyboard[sdl_lif]
     var mouse: sdl.Mouse[sdl_lif]
+    var screen_mouse: g2.Vector
+    var world_mouse: g2.Vector
     var clock: sdl.Clock[sdl_lif]
 
-    var start_fns: List[fn (inout Game[sdl_lif]) -> None]
-    var update_fns: List[fn (inout Game[sdl_lif]) -> None]
+    var start_fns: List[fn (inout Game[sdl_lif]) raises -> None]
+    var update_fns: List[fn (inout Game[sdl_lif]) raises -> None]
     var sprites: List[sdl.Texture]
 
     var running: Bool
@@ -28,13 +32,15 @@ struct Game[sdl_lif: ImmutableLifetime]:
 
     fn __init__(inout self, ref[sdl_lif]_sdl: sdl.SDL, info: GameInfo = GameInfo()) raises:
         self._sdl = _sdl
-        var window = sdl.Window(_sdl, info.game_name, 800, 600)
+        var window = sdl.Window(_sdl, info.game_name, info.window_size.x, info.window_size.y)
         self.renderer = sdl.Renderer(window^)
         self.keyboard = sdl.Keyboard(_sdl)
         self.mouse = sdl.Mouse(_sdl)
+        self.screen_mouse = None
+        self.world_mouse = None
         self.clock = sdl.Clock(_sdl, 1000)
-        self.start_fns = List[fn (inout Game[sdl_lif]) -> None]()
-        self.update_fns = List[fn (inout Game[sdl_lif]) -> None]()
+        self.start_fns = List[fn (inout Game[sdl_lif]) raises -> None]()
+        self.update_fns = List[fn (inout Game[sdl_lif]) raises -> None]()
         self.sprites = List[sdl.Texture]()
         self.running = True
         self.world = World()
@@ -45,6 +51,8 @@ struct Game[sdl_lif: ImmutableLifetime]:
         self.renderer = other.renderer^
         self.keyboard = sdl.Keyboard(self._sdl[])
         self.mouse = sdl.Mouse(self._sdl[])
+        self.screen_mouse = other.screen_mouse
+        self.world_mouse = other.world_mouse
         self.clock = other.clock^
         self.start_fns = other.start_fns^
         self.update_fns = other.update_fns^
@@ -61,7 +69,7 @@ struct Game[sdl_lif: ImmutableLifetime]:
             self = self^.register_sprite(path[])
         return self^
 
-    fn create_camera(owned self, controlled: Optional[ControlledComponent] = None) raises -> Self:
+    fn spawn_camera(inout self, controlled: Optional[ControlledComponent] = None) raises:
         var size = self.renderer.get_output_size()
         var entity = self.world.create_entity()
         self.world.position_components.__setitem__(entity.id, PositionComponent(g2.Vector()))
@@ -70,9 +78,8 @@ struct Game[sdl_lif: ImmutableLifetime]:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
         var camera = Camera(entity, Texture(self.renderer, sdl.TexturePixelFormat.RGBA8888, sdl.TextureAccess.TARGET, size[0], size[1]))
         self.world.cameras += camera
-        return self^
 
-    fn create_sprite(inout self, position: g2.Vector[], rotation: g2.Rotor[], sprite_id: Int, controlled: Optional[ControlledComponent] = None):
+    fn spawn_sprite(inout self, sprite_id: Int, position: g2.Vector[], rotation: g2.Rotor[], controlled: Optional[ControlledComponent] = None):
         var entity = self.world.create_entity()
         self.world.position_components.__setitem__(entity.id, PositionComponent(position))
         self.world.rotation_components.__setitem__(entity.id, RotationComponent(rotation))
@@ -81,12 +88,12 @@ struct Game[sdl_lif: ImmutableLifetime]:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
 
     @always_inline
-    fn register_start[func: fn [lif: ImmutableLifetime](inout Game[lif]) -> None](owned self) -> Self:
+    fn register_start[func: fn [lif: ImmutableLifetime](inout Game[lif]) raises -> None](owned self) -> Self:
         self.start_fns += func[sdl_lif]
         return self^
 
     @always_inline
-    fn register_update[func: fn [lif: ImmutableLifetime](inout Game[lif]) -> None](owned self) -> Self:
+    fn register_update[func: fn [lif: ImmutableLifetime](inout Game[lif]) raises -> None](owned self) -> Self:
         self.update_fns += func[sdl_lif]
         return self^
 
@@ -95,6 +102,8 @@ struct Game[sdl_lif: ImmutableLifetime]:
             start_fn[](self)
         
         while self.running:
+            self.screen_mouse = g2.Vector(self.mouse.get_position()[0], self.mouse.get_position()[1])
+            self.world_mouse = self.world.cameras[0].camera2world(self.world, g2.Vector(self.screen_mouse.x, self.screen_mouse.y))
             for event in self._sdl[].event_list():
                 if event[].isa[sdl.events.QuitEvent]():
                     self.running = False
@@ -102,6 +111,5 @@ struct Game[sdl_lif: ImmutableLifetime]:
                 update_fn[](self)
             for camera in self.world.cameras:
                 camera[].draw(self.world, self.renderer)
-            controlled_system(self)
             self.renderer.present()
             self.clock.tick()

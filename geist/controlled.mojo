@@ -35,7 +35,7 @@ struct ControlledComponent:
         self.zoomout = KeyCode.LSHIFT
 
 
-fn controlled_system(inout game: Game):
+fn controlled_system(inout game: Game) raises:
     for idx in range(len(game.world.controlled_components._data)):
         var controlled = game.world.controlled_components[idx].unsafe_value()[]
 
