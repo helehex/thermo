@@ -22,9 +22,11 @@ fn main() raises:
 
 
 fn test_start(inout game: Game) raises:
-    var camera = game.spawn_camera(ControlledComponent.arrow_controls)
-    var character = game.spawn_sprite(0, None, 1.0, ControlledComponent())
-    game.add_smooth_follow_component(camera, SmoothFollowComponent(5, character))
+    var camera = game.spawn_camera()
+    var character = game.spawn_sprite(0, None, 1.0)
+    game.add_component(camera, SmoothFollowComponent(5, character))
+    game.add_component(camera, ControlledComponent.arrow_controls)
+    game.add_component(character, ControlledComponent())
     
 
 fn test_update(inout game: Game) raises:

@@ -3,7 +3,7 @@ from .camera import Camera
 from .controlled import ControlledComponent
 
 @value
-struct World:
+struct World[*element_types: CollectionElement]:
     var cameras: List[Camera]
     var entities: List[Entity]
     var position_components: LabelMap[PositionComponent]
