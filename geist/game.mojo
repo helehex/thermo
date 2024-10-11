@@ -69,23 +69,25 @@ struct Game[sdl_lif: ImmutableLifetime]:
             self = self^.register_sprite(path[])
         return self^
 
-    fn spawn_camera(inout self, controlled: Optional[ControlledComponent] = None) raises:
+    fn spawn_camera(inout self, controlled: Optional[ControlledComponent] = None) raises -> Entity:
         var size = self.renderer.get_output_size()
         var entity = self.world.create_entity()
         self.world.position_components.__setitem__(entity.id, PositionComponent(g2.Vector()))
         self.world.rotation_components.__setitem__(entity.id, RotationComponent(g2.Rotor(1)))
         if controlled:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
-        var camera = Camera(entity, Texture(self.renderer, sdl.TexturePixelFormat.RGBA8888, sdl.TextureAccess.TARGET, size[0], size[1]))
+        var camera = Camera(entity, g2.Vector(size[0] / 4, size[1] / 4), Texture(self.renderer, sdl.TexturePixelFormat.RGBA8888, sdl.TextureAccess.TARGET, size[0], size[1]))
         self.world.cameras += camera
+        return entity
 
-    fn spawn_sprite(inout self, sprite_id: Int, position: g2.Vector[], rotation: g2.Rotor[], controlled: Optional[ControlledComponent] = None):
+    fn spawn_sprite(inout self, sprite_id: Int, position: g2.Vector[], rotation: g2.Rotor[], controlled: Optional[ControlledComponent] = None) -> Entity:
         var entity = self.world.create_entity()
         self.world.position_components.__setitem__(entity.id, PositionComponent(position))
         self.world.rotation_components.__setitem__(entity.id, RotationComponent(rotation))
         self.world.sprite_components.__setitem__(entity.id, SpriteComponent(UnsafePointer.address_of(self.sprites[sprite_id])))
         if controlled:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
+        return entity
 
     @always_inline
     fn register_start[func: fn [lif: ImmutableLifetime](inout Game[lif]) raises -> None](owned self) -> Self:
@@ -96,6 +98,10 @@ struct Game[sdl_lif: ImmutableLifetime]:
     fn register_update[func: fn [lif: ImmutableLifetime](inout Game[lif]) raises -> None](owned self) -> Self:
         self.update_fns += func[sdl_lif]
         return self^
+
+    @always_inline
+    fn add_smooth_follow_component(inout self, entity: Entity, component: SmoothFollowComponent):
+        self.world.smooth_follow_components.__setitem__(entity.id, component)
 
     fn run(owned self) raises:
         for start_fn in self.start_fns:

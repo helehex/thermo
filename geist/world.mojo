@@ -10,6 +10,7 @@ struct World:
     var rotation_components: LabelMap[RotationComponent]
     var sprite_components: LabelMap[SpriteComponent]
     var controlled_components: LabelMap[ControlledComponent]
+    var smooth_follow_components: LabelMap[SmoothFollowComponent]
 
     fn __init__(inout self):
         self.cameras = List[Camera]()
@@ -18,6 +19,7 @@ struct World:
         self.rotation_components = LabelMap[RotationComponent]()
         self.sprite_components = LabelMap[SpriteComponent]()
         self.controlled_components = LabelMap[ControlledComponent]()
+        self.smooth_follow_components = LabelMap[SmoothFollowComponent]()
 
     fn create_entity(inout self) -> Entity:
         var entity = Entity(len(self.entities))

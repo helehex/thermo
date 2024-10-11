@@ -3,13 +3,14 @@ alias clear_color = Color(12, 8, 6, 0)
 @value
 struct Camera:
     var entity: Entity
+    var pivot: g2.Vector
     var target: Texture
 
     fn camera2world(self, world: World, pos: g2.Vector[]) -> g2.Vector[]:
-        return (pos * world.rotation_components[self.entity.id].unsafe_value()[].rotation) + world.position_components[self.entity.id].unsafe_value()[].position
+        return ((pos - self.pivot) * world.rotation_components[self.entity.id].unsafe_value()[].rotation) + (world.position_components[self.entity.id].unsafe_value()[].position - self.pivot)
 
     fn world2camera(self, world: World, pos: g2.Vector[]) -> g2.Vector[]:
-        return ((pos - world.position_components[self.entity.id].unsafe_value()[].position) / world.rotation_components[self.entity.id].unsafe_value()[].rotation)
+        return ((pos - (world.position_components[self.entity.id].unsafe_value()[].position - self.pivot)) / world.rotation_components[self.entity.id].unsafe_value()[].rotation) + self.pivot
 
     fn draw(self, world: World, renderer: Renderer) raises:
         renderer.set_target(self.target)
