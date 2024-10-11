@@ -76,7 +76,7 @@ struct Game[sdl_lif: ImmutableLifetime]:
         self.world.rotation_components.__setitem__(entity.id, RotationComponent(g2.Rotor(1)))
         if controlled:
             self.world.controlled_components.__setitem__(entity.id, controlled.unsafe_value())
-        var camera = Camera(entity, g2.Vector(size[0] / 4, size[1] / 4), Texture(self.renderer, sdl.TexturePixelFormat.RGBA8888, sdl.TextureAccess.TARGET, size[0], size[1]))
+        var camera = Camera(entity, g2.Vector(0.5, 0.5), self.renderer)
         self.world.cameras += camera
         return entity
 

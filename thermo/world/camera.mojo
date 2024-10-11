@@ -29,10 +29,10 @@ struct Camera:
         return Reference(self) != Reference(other)
 
     fn cam2field(self, pos: g2.Vector[]) -> g2.Vector[]:
-        return ((pos - self.pivot) * self.transform.rotor()) + (self.transform.v - self.pivot)
+        return ((pos - self.pivot) * self.transform.rotor()) + (self.transform.v)
 
     fn field2cam(self, pos: g2.Vector[]) -> g2.Vector[]:
-        return ((pos - (self.transform.v - self.pivot)) / self.transform.rotor()) + self.pivot
+        return ((pos - (self.transform.v)) / self.transform.rotor()) + self.pivot
 
     # +------( Update )------+ #
     #
