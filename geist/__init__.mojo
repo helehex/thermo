@@ -4,7 +4,6 @@
 
 from sdl import *
 from infrared.hard import *
-from .components import *
 from .entity import *
 from .world import *
 from .game import *

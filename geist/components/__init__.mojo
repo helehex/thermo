@@ -2,8 +2,6 @@
 # | Copyright (c) 2024 Helehex
 # x----------------------------------------------------------------------------------------------x #
 
-@value
-@register_passable("trivial")
-struct Entity:
-    var id: Int
-    
+from .components import *
+from .controlled import *
+from .smooth_follow import *

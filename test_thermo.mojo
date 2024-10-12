@@ -39,16 +39,22 @@ def main():
     #     field += Body(g2.Vector(random_float64(100, 900), random_float64(100, 900)), Primitive(Line(g2.Vector(random_float64(-200, 0), 100), g2.Vector(random_float64(0, 200), 0))))
 
     var spawn: Bool = False
+    var spawn_continuous: Bool = False
     
     while running:
         for event in sdl.event_list():
             if event[].isa[events.QuitEvent]():
                 running = False
             if event[].isa[events.MouseButtonEvent]():
-                if event[].unsafe_get[events.MouseButtonEvent]()[].clicks == 1 and event[].unsafe_get[events.MouseButtonEvent]()[].state == 1:
-                    spawn = True
-                elif event[].unsafe_get[events.MouseButtonEvent]()[].state == 0:
-                    spawn = False
+                var mouse_button_event = event[].unsafe_get[events.MouseButtonEvent]()
+                if mouse_button_event[].button == 1:
+                    if mouse_button_event[].state == 1:
+                        spawn = True
+                else:
+                    if mouse_button_event[].state == 1:
+                        spawn_continuous = True
+                    else:
+                        spawn_continuous = False
                     
         clock.tick()
 
@@ -58,7 +64,7 @@ def main():
         field._bodies[0][].vel.v = (world_cursor - field._bodies[0][].pos.v) * 0.25
         field._bodies[0][].pos.v = world_cursor
 
-        if spawn == True:
+        if spawn or spawn_continuous:
             field += Body(world_cursor, List[Primitive](
                 Primitive(Line(g2.Vector(-100, -100), g2.Vector(100, -100))), 
                 Primitive(Line(g2.Vector(100, -100), g2.Vector(100, 100))), 

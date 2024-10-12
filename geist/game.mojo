@@ -1,8 +1,12 @@
+# x----------------------------------------------------------------------------------------------x #
+# | Copyright (c) 2024 Helehex
+# x----------------------------------------------------------------------------------------------x #
+
 from pathlib import Path
 from collections import Optional
 from sys.intrinsics import _type_is_eq
 from os import abort
-from .controlled import ControlledComponent, controlled_system
+from .components import *
 
 
 @value
@@ -79,13 +83,6 @@ struct Game[sdl_lif: ImmutableLifetime]:
         self.world.cameras += camera
         return entity
 
-    fn spawn_sprite(inout self, sprite_id: Int, position: g2.Vector[], rotation: g2.Rotor[]) -> Entity:
-        var entity = self.world.create_entity()
-        self.world.position_components.__setitem__(entity.id, PositionComponent(position))
-        self.world.rotation_components.__setitem__(entity.id, RotationComponent(rotation))
-        self.world.sprite_components.__setitem__(entity.id, SpriteComponent(UnsafePointer.address_of(self.sprites[sprite_id])))
-        return entity
-
     @always_inline
     fn register_start[func: fn [lif: ImmutableLifetime](inout Game[lif]) raises -> None](owned self) -> Self:
         self.start_fns += func[sdl_lif]
@@ -96,12 +93,33 @@ struct Game[sdl_lif: ImmutableLifetime]:
         self.update_fns += func[sdl_lif]
         return self^
 
+    @always_inline
+    fn spawn[*Ts: AnyType](inout self, owned *components: *Ts) -> Entity:
+        var entity = self.world.create_entity()
+        @parameter
+        fn _add_component[T: AnyType](component: T):
+            self.add_component(entity, component)
+        components.each[_add_component]()
+        return entity
+
+    fn add_components[*Ts: AnyType](inout self, entity: Entity, owned *components: *Ts):
+        @parameter
+        fn _add_component[T: AnyType](component: T):
+            self.add_component(entity, component)
+        components.each[_add_component]()
+
     fn add_component[T: AnyType](inout self, entity: Entity, component: T):
         @parameter
-        if _type_is_eq[T, ControlledComponent]():
-            self.world.controlled_components.__setitem__(entity.id, rebind[Reference[ControlledComponent, __lifetime_of(component)]](Reference(component))[])
+        if _type_is_eq[T, PositionComponent]():
+            self.world.position_components.__setitem__(entity.id, utils.any_rebind[PositionComponent](component))
+        elif _type_is_eq[T, RotationComponent]():
+            self.world.rotation_components.__setitem__(entity.id, utils.any_rebind[RotationComponent](component))
+        elif _type_is_eq[T, SpriteComponent]():
+            self.world.sprite_components.__setitem__(entity.id, utils.any_rebind[SpriteComponent](component))
+        elif _type_is_eq[T, ControlledComponent]():
+            self.world.controlled_components.__setitem__(entity.id, utils.any_rebind[ControlledComponent](component))
         elif _type_is_eq[T, SmoothFollowComponent]():
-            self.world.smooth_follow_components.__setitem__(entity.id, rebind[Reference[SmoothFollowComponent, __lifetime_of(component)]](Reference(component))[])
+            self.world.smooth_follow_components.__setitem__(entity.id, utils.any_rebind[SmoothFollowComponent](component))
         else:
             abort("unknown component")
 

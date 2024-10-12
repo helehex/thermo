@@ -1,6 +1,10 @@
+# x----------------------------------------------------------------------------------------------x #
+# | Copyright (c) 2024 Helehex
+# x----------------------------------------------------------------------------------------------x #
+
 from .label_map import LabelMap
 from .camera import Camera
-from .controlled import ControlledComponent
+
 
 @value
 struct World[*element_types: CollectionElement]:

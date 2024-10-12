@@ -4,8 +4,8 @@ from pathlib import _dir_of_current_file
 
 
 alias TestGameInfo = GameInfo(
-    "Geist Test",
-    g2.Vector[DType.int32](800, 600),
+    game_name = "Geist Test",
+    window_size = g2.Vector[DType.int32](800, 600),
 )
 
 
@@ -22,13 +22,11 @@ fn main() raises:
 
 
 fn test_start(inout game: Game) raises:
+    var character = game.spawn(SpriteComponent(game.sprites[0]), PositionComponent(None), RotationComponent(1.0), ControlledComponent())
     var camera = game.spawn_camera()
-    var character = game.spawn_sprite(0, None, 1.0)
-    game.add_component(camera, SmoothFollowComponent(5, character))
-    game.add_component(camera, ControlledComponent.arrow_controls)
-    game.add_component(character, ControlledComponent())
+    game.add_components(camera, SmoothFollowComponent(5, character), ControlledComponent.arrow_controls)
     
 
 fn test_update(inout game: Game) raises:
     if game.mouse.get_buttons() == 1:
-        _ = game.spawn_sprite(0, game.world_mouse, infrared.hard.g2.Rotor(1))
+        _ = game.spawn(SpriteComponent(game.sprites[0]), PositionComponent(game.world_mouse), RotationComponent(infrared.hard.g2.Rotor(1)))
