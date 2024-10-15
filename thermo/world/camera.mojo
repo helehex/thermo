@@ -98,7 +98,6 @@ struct Camera:
         for body in field._bodies:
             body[][].draw(self, renderer)
 
-
         renderer.reset_target()
         var size = renderer.get_output_size()
         renderer.set_viewport(DRect[DType.int32](self.viewport.x * size[0], self.viewport.y * size[1], self.viewport.w * size[0], self.viewport.h * size[1]))

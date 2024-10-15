@@ -79,11 +79,13 @@ fn controlled_system(inout game: Game) raises:
             mov.y += 1
 
         var entity_id = game.world.controlled_components._idx2lbl[idx]
+        var position_component = game.world.position_components[entity_id].unsafe_value()
+        var rotation_component = game.world.rotation_components[entity_id].unsafe_value()
 
         if not mov.is_zero():
-            mov = (mov / mov.nom()) * game.world.rotation_components[entity_id].unsafe_value()[].rotation * game.clock.delta_time * mov_speed
+            mov = mov.normalized() * game.clock.delta_time * mov_speed * rotation_component[].rotation
 
-        var new_transform = (game.world.position_components[entity_id].unsafe_value()[].position + game.world.rotation_components[entity_id].unsafe_value()[].rotation).trans(mov + rot)
-        game.world.position_components[entity_id].unsafe_value()[] = new_transform.vector()
-        game.world.rotation_components[entity_id].unsafe_value()[] = new_transform.rotor()
+        var new_transform = (position_component[].position + rotation_component[].rotation).trans(mov + rot)
+        position_component[] = new_transform.vector()
+        rotation_component[] = new_transform.rotor()
         

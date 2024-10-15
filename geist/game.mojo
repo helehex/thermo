@@ -10,14 +10,16 @@ from .components import *
 
 
 @value
-struct GameInfo:
+struct Config:
     var game_name: String
     var window_size: g2.Vector[DType.int32]
+    var target_fps: Int
 
-    # default game info
-    fn __init__(inout self):
-        self.game_name = "My Game"
-        self.window_size = g2.Vector[DType.int32](800, 600)
+    # default game config
+    fn __init__(inout self, game_name: String = "My Game", window_size: g2.Vector[DType.int32] = g2.Vector[DType.int32](800, 600), target_fps: Int = 100):
+        self.game_name = game_name
+        self.window_size = window_size
+        self.target_fps = target_fps
 
 
 struct Game[sdl_lif: ImmutableLifetime]:
@@ -36,15 +38,15 @@ struct Game[sdl_lif: ImmutableLifetime]:
     var running: Bool
     var world: World
 
-    fn __init__(inout self, ref[sdl_lif]_sdl: sdl.SDL, info: GameInfo = GameInfo()) raises:
+    fn __init__(inout self, ref[sdl_lif]_sdl: sdl.SDL, config: Config = Config()) raises:
         self._sdl = _sdl
-        var window = sdl.Window(_sdl, info.game_name, info.window_size.x, info.window_size.y)
+        var window = sdl.Window(_sdl, config.game_name, config.window_size.x, config.window_size.y)
         self.renderer = sdl.Renderer(window^)
         self.keyboard = sdl.Keyboard(_sdl)
         self.mouse = sdl.Mouse(_sdl)
         self.screen_mouse = None
         self.world_mouse = None
-        self.clock = sdl.Clock(_sdl, 1000)
+        self.clock = sdl.Clock(_sdl, config.target_fps)
         self.start_fns = List[fn (inout Game[sdl_lif]) raises -> None]()
         self.update_fns = List[fn (inout Game[sdl_lif]) raises -> None]()
         self.sprites = List[sdl.Texture]()
@@ -126,6 +128,9 @@ struct Game[sdl_lif: ImmutableLifetime]:
     fn run(owned self) raises:
         for start_fn in self.start_fns:
             start_fn[](self)
+
+        var frame_count = 0
+        var smooth_fps = 0.0
         
         while self.running:
             self.screen_mouse = g2.Vector(self.mouse.get_position()[0], self.mouse.get_position()[1])
@@ -138,4 +143,10 @@ struct Game[sdl_lif: ImmutableLifetime]:
             for camera in self.world.cameras:
                 camera[].draw(self.world, self.renderer)
             self.renderer.present()
+
+            # fps tracker
             self.clock.tick()
+            frame_count += 1
+            smooth_fps = (smooth_fps * 0.9) + (0.1/self.clock.delta_time)
+            if frame_count % 100 == 1:
+                print("fps: ", int(smooth_fps))

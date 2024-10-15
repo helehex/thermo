@@ -3,15 +3,16 @@ from infrared import hard
 from pathlib import _dir_of_current_file
 
 
-alias TestGameInfo = GameInfo(
+alias TestConfig = Config(
     game_name = "Geist Test",
     window_size = g2.Vector[DType.int32](800, 600),
+    target_fps = 10000
 )
 
 
 fn main() raises:
     (
-        Game(sdl.SDL(video=True, timer=True, events=True, gfx=True, img=True), TestGameInfo)
+        Game(sdl.SDL(video=True, timer=True, events=True, gfx=True, img=True), TestConfig)
         .register_start[test_start]()
         .register_update[test_update]()
         .register_update[game.controlled_system]()

@@ -31,40 +31,6 @@ fn near(a: AABB, b: AABB) -> Bool:
 # | Primitive x Primitive
 # +--------------------------------------------------------------------------+ #
 #
-# @always_inline("nodebug")
-# fn touching(a: Node, b: Node) -> Bool:
-#     var a_prim: Primitive
-#     var b_prim: Primitive
-
-#     if a.prim.isa[AABB]():
-#         a_prim = a.prim.unsafe_get[AABB]()[] + a.pos.v
-#     elif a.prim.isa[Point]():
-#         a_prim = a.prim.unsafe_get[Point]()[] + a.pos.v
-#     elif a.prim.isa[Circle]():
-#         a_prim = a.prim.unsafe_get[Circle]()[] + a.pos.v
-#     elif a.prim.isa[Line]():
-#         a_prim = a.prim.unsafe_get[Line]()[] + a.pos.v
-#     elif a.prim.isa[Ray]():
-#         a_prim = a.prim.unsafe_get[Ray]()[] + a.pos.v
-#     else:
-#         return False
-
-#     if b.prim.isa[AABB]():
-#         b_prim = b.prim.unsafe_get[AABB]()[] + b.pos.v
-#     elif b.prim.isa[Point]():
-#         b_prim = b.prim.unsafe_get[Point]()[] + b.pos.v
-#     elif b.prim.isa[Circle]():
-#         b_prim = b.prim.unsafe_get[Circle]()[] + b.pos.v
-#     elif b.prim.isa[Line]():
-#         b_prim = b.prim.unsafe_get[Line]()[] + b.pos.v
-#     elif b.prim.isa[Ray]():
-#         b_prim = b.prim.unsafe_get[Ray]()[] + b.pos.v
-#     else:
-#         return False
-
-#     return touching(a_prim, b_prim)
-
-
 @always_inline("nodebug")
 fn touching(a: Primitive, b: Primitive) -> Bool:
     if a._data.isa[AABB]():

@@ -35,7 +35,7 @@ struct Camera:
         tex_w = UnsafePointer[IntC].alloc(1)
         tex_h = UnsafePointer[IntC].alloc(1)
 
-        for idx in range(len(world.sprite_components._data)):
+        for idx in range(len(world.sprite_components)):
             renderer.sdl[]._sdl.query_texture(world.sprite_components._data[idx].sprite._texture_ptr, UnsafePointer[UInt32](), UnsafePointer[IntC](), tex_w, tex_h)
             sprite2camera = self.world2camera(world, world.position_components[world.sprite_components._idx2lbl[idx]].unsafe_value()[].position)
             var rot = world.rotation_components[self.entity.id].unsafe_value()[].rotation / world.rotation_components[world.sprite_components._idx2lbl[idx]].unsafe_value()[].rotation

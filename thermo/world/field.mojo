@@ -46,34 +46,18 @@ struct Field:
         # self.renderables = List[render_fn]()
         self += Camera(renderer, g2.Multivector(1, g2.Vector(800, 500)), g2.Vector(800, 500), DRect[DType.float32](0, 0, 1, 1))
         
-
-
     fn __iadd__(inout self, owned camera: Camera):
         if len(self._cameras) == 0:
             camera.is_main_camera = True
         self._cameras.append(camera^)
-        # var _camera = Reference(self._cameras[-1])
-        # fn update(delta_time: Float64, key_state: List[Bool]):
-        #     _camera[].update(delta_time, key_state)
-        # self.updateables.append(update^)
-
 
     fn __iadd__(inout self, owned body: Body):
         var ptr = UnsafePointer[Body].alloc(1)
         ptr.init_pointee_move(body)
         self._bodies.append(ptr)
-        # var _body = Reference(self._bodies[-1])
-        # fn update(delta_time: Float64, key_state: List[Bool]):
-        #     _body[].update(delta_time, key_state)
-        # self.updateables.append(update^)
-
 
     fn __iadd__(inout self, owned node: Node):
         self._nodes.append(node^)
-        # var _node = Reference(self._nodes[-1])
-        # fn update(delta_time: Float64, key_state: List[Bool]):
-        #     _node[].update(delta_time, key_state)
-        # self.updateables.append(update^)
 
     fn __isub__(inout self, camera: Camera) raises:
         _ = self._cameras.pop(self._cameras.index(camera))
